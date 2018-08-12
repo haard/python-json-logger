@@ -49,9 +49,10 @@ class JsonEncoder(json.JSONEncoder):
     """
 
     def default(self, obj):
-        if isinstance(obj, (date, datetime, time)):
-            return self.format_datetime_obj(obj)
-
+        if hasattr(obj, "isoformat"):
+            return obj.isoformat()
+        elif hasattr(obj, "__json__"):
+            return obj.__json__()
         elif istraceback(obj):
             return ''.join(traceback.format_tb(obj)).strip()
 
@@ -59,7 +60,6 @@ class JsonEncoder(json.JSONEncoder):
                 or isinstance(obj, Exception) \
                 or type(obj) == type:
             return str(obj)
-
         try:
             return super(JsonEncoder, self).default(obj)
 
@@ -70,8 +70,6 @@ class JsonEncoder(json.JSONEncoder):
             except Exception:
                 return None
 
-    def format_datetime_obj(self, obj):
-        return obj.isoformat()
 
 
 class JsonFormatter(logging.Formatter):
@@ -169,12 +167,16 @@ class JsonFormatter(logging.Formatter):
 
     def jsonify_log_record(self, log_record):
         """Returns a json string of the log record."""
-        return self.json_serializer(log_record,
-                                    default=self.json_default,
-                                    cls=self.json_encoder,
-                                    indent=self.json_indent,
-                                    ensure_ascii=self.json_ensure_ascii)
-
+        try: 
+            return self.json_serializer(log_record,
+                                        default=self.json_default,
+                                        cls=self.json_encoder,
+                                        indent=self.json_indent,
+                                        ensure_ascii=self.json_ensure_ascii)
+        except Exception as exe:
+            return json.dumps({"levelname": logging.CRITICAL, "levelno": 50,
+                               "name": getattr(log_record, name, "NONAME"),
+                               "message": "Exception %s when serializing log record: %s" % (exe, log_record)})
     def format(self, record):
         """Formats a log record and serializes to json"""
         message_dict = {}
