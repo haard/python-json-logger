@@ -71,7 +71,6 @@ class JsonEncoder(json.JSONEncoder):
                 return None
 
 
-
 class JsonFormatter(logging.Formatter):
     """
     A custom formatter to format logging records as json strings.
@@ -167,7 +166,7 @@ class JsonFormatter(logging.Formatter):
 
     def jsonify_log_record(self, log_record):
         """Returns a json string of the log record."""
-        try: 
+        try:
             return self.json_serializer(log_record,
                                         default=self.json_default,
                                         cls=self.json_encoder,
@@ -175,8 +174,9 @@ class JsonFormatter(logging.Formatter):
                                         ensure_ascii=self.json_ensure_ascii)
         except Exception as exe:
             return json.dumps({"levelname": logging.CRITICAL, "levelno": 50,
-                               "name": getattr(log_record, name, "NONAME"),
+                               "name": getattr(log_record, 'name', "NONAME"),
                                "message": "Exception %s when serializing log record: %s" % (exe, log_record)})
+
     def format(self, record):
         """Formats a log record and serializes to json"""
         message_dict = {}
